@@ -36,7 +36,7 @@ class ShifteaseApp extends StatelessWidget {
       routes: {
         '/': (context) => const SplashScreen(),
         '/role_selection': (context) => const RoleSelectionScreen(),
-        '/my_requests': (context) => const MyRequestsScreen(),
+        '/my_requests': (context) => MyRequestsScreen(),
         '/create_request': (context) => const CreateRequestScreen(),
         '/request_status': (context) => const RequestStatusScreen(),
         '/worker_dashboard': (context) => const WorkerDashboard(),

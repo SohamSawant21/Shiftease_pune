@@ -72,9 +72,17 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       return;
     }
 
+    final selectedDate = _selectedDate;
+    final selectedTime = _selectedTime;
+
+    if (selectedDate == null || selectedTime == null) return;
+
     final dateTime = DateTime(
-      _selectedDate!.year, _selectedDate!.month, _selectedDate!.day,
-      _selectedTime!.hour, _selectedTime!.minute,
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      selectedTime.hour,
+      selectedTime.minute,
     );
 
     final req = Request(
@@ -86,6 +94,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       duration: int.tryParse(_durationController.text.trim()) ?? 1,
       helpers: _helpersCount,
       payment: double.tryParse(_paymentController.text.trim()) ?? 0.0,
+      status: 'Pending',   // ✅ ADD THIS LINE
     );
 
     if (!mounted) return;
