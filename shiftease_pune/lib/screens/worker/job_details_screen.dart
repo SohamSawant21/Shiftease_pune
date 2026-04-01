@@ -76,7 +76,7 @@ class JobDetailsScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
-                              '₹\${job.payment.toStringAsFixed(0)}',
+                              '₹${job.payment.toStringAsFixed(0)}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -99,7 +99,7 @@ class JobDetailsScreen extends StatelessWidget {
                               children: [
                                 const Icon(Icons.schedule, size: 16, color: AppTheme.primary),
                                 const SizedBox(width: 8),
-                                Text('\${job.duration} Hours', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                Text('${job.duration} Hours', style: const TextStyle(fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),
@@ -114,7 +114,7 @@ class JobDetailsScreen extends StatelessWidget {
                               children: [
                                 const Icon(Icons.group, size: 16, color: AppTheme.primary),
                                 const SizedBox(width: 8),
-                                Text('\${job.helpers} Helpers', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                Text('${job.helpers} Helpers', style: const TextStyle(fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),

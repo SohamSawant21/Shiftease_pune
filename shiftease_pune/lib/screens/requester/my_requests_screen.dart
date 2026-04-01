@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../models/request.dart';
 import '../../services/request_provider.dart';
 import '../../utils/app_theme.dart';
 import 'package:intl/intl.dart';
@@ -86,7 +87,7 @@ class MyRequestsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRequestCard(BuildContext context, request) {
+  Widget _buildRequestCard(BuildContext context, Request request) {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surfaceContainerLowest,
@@ -161,7 +162,7 @@ class MyRequestsScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Row(
               children: [
-                _buildInfoBadge(Icons.inventory_2, 'Inventory', '\${request.duration} Hrs • \${request.helpers} Helpers'),
+                _buildInfoBadge(Icons.inventory_2, 'Inventory', '${request.duration} Hrs • ${request.helpers} Helpers'),
               ],
             ),
             const SizedBox(height: 24),
@@ -204,26 +205,29 @@ class MyRequestsScreen extends StatelessWidget {
           child: Icon(icon, color: AppTheme.onSurfaceVariant, size: 20),
         ),
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.outline,
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.outline,
+                ),
               ),
-            ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.onSurface,
+              Text(
+                value,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.onSurface,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

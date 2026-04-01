@@ -57,30 +57,40 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   }
 
   void _submit() {
-    if (_formKey.currentState!.validate() && _selectedDate != null && _selectedTime != null) {
-      final dateTime = DateTime(
-        _selectedDate!.year, _selectedDate!.month, _selectedDate!.day,
-        _selectedTime!.hour, _selectedTime!.minute,
+    // Null-safe check — currentState can theoretically be null during hot-reload
+    final formState = _formKey.currentState;
+    if (formState == null || !formState.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all required fields')),
       );
-      
-      final req = Request(
-        id: 'SH-\${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
-        name: _nameController.text,
-        phone: _phoneController.text,
-        location: _locationController.text,
-        dateTime: dateTime,
-        duration: int.parse(_durationController.text),
-        helpers: _helpersCount,
-        payment: double.parse(_paymentController.text),
-      );
-
-      Provider.of<RequestProvider>(context, listen: false).addRequest(req);
-      Navigator.pop(context);
-    } else if (_selectedDate == null || _selectedTime == null) {
+      return;
+    }
+    if (_selectedDate == null || _selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select Date & Time')),
       );
+      return;
     }
+
+    final dateTime = DateTime(
+      _selectedDate!.year, _selectedDate!.month, _selectedDate!.day,
+      _selectedTime!.hour, _selectedTime!.minute,
+    );
+
+    final req = Request(
+      id: 'SH-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
+      name: _nameController.text.trim(),
+      phone: _phoneController.text.trim(),
+      location: _locationController.text.trim(),
+      dateTime: dateTime,
+      duration: int.tryParse(_durationController.text.trim()) ?? 1,
+      helpers: _helpersCount,
+      payment: double.tryParse(_paymentController.text.trim()) ?? 0.0,
+    );
+
+    if (!mounted) return;
+    Provider.of<RequestProvider>(context, listen: false).addRequest(req);
+    Navigator.pop(context);
   }
 
   @override
@@ -139,7 +149,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
                         label: 'Name',
                         controller: _nameController,
                         hint: 'e.g. Rahul Sharma',
-                        validator: (v) => v!.isEmpty ? 'Enter name' : null,
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter name' : null,
                       ),
                       const SizedBox(height: 16),
                       _buildTextField(
@@ -147,7 +157,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
                         controller: _phoneController,
                         hint: '+91 00000 00000',
                         keyboardType: TextInputType.phone,
-                        validator: (v) => v!.length < 10 ? 'Enter valid number' : null,
+                        validator: (v) => (v == null || v.trim().length < 10) ? 'Enter valid number' : null,
                       ),
                       
                       const SizedBox(height: 32),
@@ -158,7 +168,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
                         controller: _locationController,
                         hint: 'Area, Landmark, or Society Name',
                         prefixIcon: Icons.location_on,
-                        validator: (v) => v!.isEmpty ? 'Enter location' : null,
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter location' : null,
                       ),
                       const SizedBox(height: 16),
                       _buildLabel('Date & Time'),
@@ -193,7 +203,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
                         hint: '2',
                         prefixIcon: Icons.timer,
                         keyboardType: TextInputType.number,
-                        validator: (v) => v!.isEmpty ? 'Enter duration' : null,
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter duration' : null,
                       ),
                       
                       const SizedBox(height: 32),
@@ -215,7 +225,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
                                 if (_helpersCount > 1) setState(() => _helpersCount--);
                               },
                             ),
-                            Text('\$_helpersCount', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                            Text('$_helpersCount', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                             IconButton(
                               icon: const Icon(Icons.add, color: AppTheme.primary),
                               onPressed: () {
@@ -232,7 +242,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
                         hint: '1500',
                         prefixText: '₹ ',
                         keyboardType: TextInputType.number,
-                        validator: (v) => v!.isEmpty ? 'Enter amount' : null,
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter amount' : null,
                       ),
                       
                       const SizedBox(height: 32),

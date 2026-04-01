@@ -4,10 +4,14 @@ import '../models/request.dart';
 class RequestProvider with ChangeNotifier {
   final List<Request> _requests = [];
 
-  List<Request> get requests => _requests;
+  /// Returns a new list so every Consumer rebuild gets a new reference.
+  List<Request> get requests => _requests.toList();
 
   List<Request> get pendingRequests =>
       _requests.where((r) => r.status == 'Pending').toList();
+
+  List<Request> get acceptedRequests =>
+      _requests.where((r) => r.status == 'Accepted').toList();
 
   void addRequest(Request request) {
     _requests.add(request);
@@ -25,7 +29,7 @@ class RequestProvider with ChangeNotifier {
   Request? getRequestById(String id) {
     try {
       return _requests.firstWhere((r) => r.id == id);
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }
