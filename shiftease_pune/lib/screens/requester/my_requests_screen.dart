@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/request.dart';
 import '../../services/request_provider.dart';
-import '../../utils/app_theme.dart';
-import 'package:intl/intl.dart';
+// Note: Depending on your exact setup, you may need to import your Request model
+// import '../../models/request.dart'; 
 
 class MyRequestsScreen extends StatelessWidget {
   const MyRequestsScreen({super.key});
@@ -11,225 +10,107 @@ class MyRequestsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.surface,
       appBar: AppBar(
-        title: const Text(
-          'Shiftease Pune',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Shiftease Pune'),
       ),
+      // 1. Wrap the body in a Consumer to connect to your Provider state
       body: Consumer<RequestProvider>(
         builder: (context, provider, child) {
+          // Fetch all requests belonging to the user
           final requests = provider.requests;
-          
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 24),
-                  const Text(
-                    'My Requests',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      color: AppTheme.onSurface,
-                      letterSpacing: -1,
-                    ),
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Basic Header
+                const Text(
+                  'My Requests',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Manage your active relocation services and tracking updates.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppTheme.onSurfaceVariant,
-                    ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Manage your active relocation services and tracking updates.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
                   ),
-                  const SizedBox(height: 32),
-                  
-                  if (requests.isEmpty)
-                    Expanded(
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.inbox, size: 64, color: AppTheme.outlineVariant),
-                            const SizedBox(height: 16),
-                            const Text('No requests yet.', style: TextStyle(color: AppTheme.onSurfaceVariant)),
-                          ],
+                ),
+                const SizedBox(height: 16),
+                
+                // 2. Dynamically show either the Empty State OR the List of Jobs
+                Expanded(
+                  child: requests.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.inventory_2_outlined,
+                                size: 60,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'No requests yet.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: requests.length,
+                          itemBuilder: (context, index) {
+                            final request = requests[index];
+                            
+                            // 3. Simple, beginner-friendly Card for each request
+                            return Card(
+                              elevation: 2,
+                              margin: const EdgeInsets.only(bottom: 12),
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.local_shipping, 
+                                  color: Colors.blue, 
+                                  size: 32
+                                ),
+                                title: Text(
+                                  request.location, 
+                                  style: const TextStyle(fontWeight: FontWeight.bold)
+                                ),
+                                subtitle: Text('Status: ${request.status}'),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  // 4. Feature Intact: Navigate to the status screen, passing the ID
+                                  Navigator.pushNamed(
+                                    context, 
+                                    '/request_status', 
+                                    arguments: request.id,
+                                  );
+                                },
+                              ),
+                            );
+                          },
                         ),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: ListView.separated(
-                        itemCount: requests.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 16),
-                        itemBuilder: (context, index) {
-                          final request = requests[index];
-                          return _buildRequestCard(context, request);
-                        },
-                      ),
-                    ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },
       ),
+      // Default FloatingActionButton remains the same
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/create_request'),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: AppTheme.onPrimary,
+        onPressed: () {
+          Navigator.pushNamed(context, '/create_request');
+        },
         child: const Icon(Icons.add),
       ),
-    );
-  }
-
-  Widget _buildRequestCard(BuildContext context, Request request) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(16),
-        border: const Border(left: BorderSide(color: AppTheme.primary, width: 4)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(15),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'TRANSIT',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
-                          color: AppTheme.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        request.location,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: request.status == 'Pending' ? AppTheme.surfaceContainerHigh : AppTheme.primaryContainer.withAlpha(30),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    request.status,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: request.status == 'Pending' ? AppTheme.onSurfaceVariant : AppTheme.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                _buildInfoBadge(Icons.calendar_today, 'Date & Time', DateFormat('MMM dd, hh:mm a').format(request.dateTime)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                _buildInfoBadge(Icons.inventory_2, 'Inventory', '${request.duration} Hrs • ${request.helpers} Helpers'),
-              ],
-            ),
-            const SizedBox(height: 24),
-            const Divider(height: 1),
-            const SizedBox(height: 16),
-            InkWell(
-              onTap: () {
-                Navigator.pushNamed(context, '/request_status', arguments: request.id);
-              },
-              child: const Row(
-                children: [
-                  Text(
-                    'View Details',
-                    style: TextStyle(
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  Icon(Icons.chevron_right, size: 16, color: AppTheme.primary),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoBadge(IconData icon, String title, String value) {
-    return Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: const BoxDecoration(
-            color: AppTheme.surfaceContainer,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: AppTheme.onSurfaceVariant, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.outline,
-                ),
-              ),
-              Text(
-                value,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/request_provider.dart';
 import '../../models/request.dart';
-import '../../utils/app_theme.dart';
 import 'package:intl/intl.dart';
 
 class CreateRequestScreen extends StatefulWidget {
@@ -14,7 +13,7 @@ class CreateRequestScreen extends StatefulWidget {
 
 class _CreateRequestScreenState extends State<CreateRequestScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _locationController = TextEditingController();
@@ -57,7 +56,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   }
 
   void _submit() {
-    // Null-safe check — currentState can theoretically be null during hot-reload
     final formState = _formKey.currentState;
     if (formState == null || !formState.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -94,7 +92,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       duration: int.tryParse(_durationController.text.trim()) ?? 1,
       helpers: _helpersCount,
       payment: double.tryParse(_paymentController.text.trim()) ?? 0.0,
-      status: 'Pending',   // ✅ ADD THIS LINE
+      status: 'Pending',
     );
 
     if (!mounted) return;
@@ -105,265 +103,150 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Create Request', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Create Request'),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Basic Header Section
               const Text(
                 'Post a New Job',
                 style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                  color: AppTheme.onSurface,
-                  letterSpacing: -0.5,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
               const Text(
                 "Tell us what you need moved. We'll connect you with the best local helpers in Pune within minutes.",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppTheme.onSurfaceVariant,
-                ),
+                style: TextStyle(fontSize: 16),
               ),
-              const SizedBox(height: 24),
-              
-              Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceContainerLowest,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(10),
-                      blurRadius: 32,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
+              const SizedBox(height: 32),
+
+              // Contact Information Section
+              const Text(
+                'Contact Information',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  hintText: 'e.g. Rahul Sharma',
                 ),
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionHeader('Contact Information', Icons.person),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        label: 'Name',
-                        controller: _nameController,
-                        hint: 'e.g. Rahul Sharma',
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter name' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        label: 'Mobile Number',
-                        controller: _phoneController,
-                        hint: '+91 00000 00000',
-                        keyboardType: TextInputType.phone,
-                        validator: (v) => (v == null || v.trim().length < 10) ? 'Enter valid number' : null,
-                      ),
-                      
-                      const SizedBox(height: 32),
-                      _buildSectionHeader('Shift Details', Icons.local_shipping),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        label: 'Location',
-                        controller: _locationController,
-                        hint: 'Area, Landmark, or Society Name',
-                        prefixIcon: Icons.location_on,
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter location' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildLabel('Date & Time'),
-                      InkWell(
-                        onTap: _pickDateTime,
-                        child: Container(
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: AppTheme.surfaceContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.calendar_today, color: AppTheme.outline),
-                              const SizedBox(width: 12),
-                              Text(
-                                _formattedDateTime,
-                                style: TextStyle(
-                                  color: _selectedDate == null ? AppTheme.outline : AppTheme.onSurface,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        label: 'Duration (in hours)',
-                        controller: _durationController,
-                        hint: '2',
-                        prefixIcon: Icons.timer,
-                        keyboardType: TextInputType.number,
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter duration' : null,
-                      ),
-                      
-                      const SizedBox(height: 32),
-                      _buildSectionHeader('Requirement & Payment', Icons.group_add),
-                      const SizedBox(height: 16),
-                      _buildLabel('Number of Helpers'),
-                      Container(
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: AppTheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove, color: AppTheme.primary),
-                              onPressed: () {
-                                if (_helpersCount > 1) setState(() => _helpersCount--);
-                              },
-                            ),
-                            Text('$_helpersCount', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                            IconButton(
-                              icon: const Icon(Icons.add, color: AppTheme.primary),
-                              onPressed: () {
-                                setState(() => _helpersCount++);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        label: 'Offered Payment (₹)',
-                        controller: _paymentController,
-                        hint: '1500',
-                        prefixText: '₹ ',
-                        keyboardType: TextInputType.number,
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter amount' : null,
-                      ),
-                      
-                      const SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 64,
-                        child: ElevatedButton(
-                          onPressed: _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primary,
-                            foregroundColor: AppTheme.onPrimary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('Post Request', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                              SizedBox(width: 12),
-                              Icon(Icons.send),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Center(
-                        child: Text(
-                          'SAFE & SECURE PAYMENT VIA SHIFTEASE',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
-                            color: AppTheme.outline,
-                          ),
-                        ),
-                      ),
-                    ],
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter name' : null,
+              ),
+              TextFormField(
+                controller: _phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Mobile Number',
+                  hintText: '+91 00000 00000',
+                ),
+                keyboardType: TextInputType.phone,
+                validator: (v) => (v == null || v.trim().length < 10) ? 'Enter valid number' : null,
+              ),
+              const SizedBox(height: 32),
+
+              // Shift Details Section
+              const Text(
+                'Shift Details',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Location',
+                  hintText: 'Area, Landmark, or Society Name',
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter location' : null,
+              ),
+              const SizedBox(height: 16),
+              
+              // Standard Date & Time Row
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _formattedDateTime,
+                      style: const TextStyle(fontSize: 16),
+                    ),
                   ),
+                  ElevatedButton(
+                    onPressed: _pickDateTime,
+                    child: const Text('Select Date & Time'),
+                  ),
+                ],
+              ),
+              
+              TextFormField(
+                controller: _durationController,
+                decoration: const InputDecoration(
+                  labelText: 'Duration (in hours)',
+                  hintText: '2',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter duration' : null,
+              ),
+              const SizedBox(height: 32),
+
+              // Requirement & Payment Section
+              const Text(
+                'Requirement & Payment',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Text('Number of Helpers:', style: TextStyle(fontSize: 16)),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.remove),
+                    onPressed: () {
+                      if (_helpersCount > 1) {
+                        setState(() => _helpersCount--);
+                      }
+                    },
+                  ),
+                  Text(
+                    '$_helpersCount',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () {
+                      setState(() => _helpersCount++);
+                    },
+                  ),
+                ],
+              ),
+              TextFormField(
+                controller: _paymentController,
+                decoration: const InputDecoration(
+                  labelText: 'Offered Payment (₹)',
+                  hintText: '1500',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter amount' : null,
+              ),
+              const SizedBox(height: 32),
+
+              // Basic Submit Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submit,
+                  child: const Text('Post Request'),
                 ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, color: AppTheme.primary),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.onSurface,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0, left: 4.0),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: AppTheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required String label,
-    required TextEditingController controller,
-    String? hint,
-    IconData? prefixIcon,
-    String? prefixText,
-    TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildLabel(label),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          validator: validator,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(color: AppTheme.outline),
-            prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppTheme.outline) : null,
-            prefixText: prefixText,
-            prefixStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.onSurface, fontSize: 16),
-            filled: true,
-            fillColor: AppTheme.surfaceContainer,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          ),
-        ),
-      ],
     );
   }
 }

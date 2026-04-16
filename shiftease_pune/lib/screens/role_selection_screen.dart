@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../utils/app_theme.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -7,7 +6,6 @@ class RoleSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: const Text(
           'Shiftease Pune',
@@ -16,126 +14,79 @@ class RoleSelectionScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Basic Title
               const Text(
                 'Select Your Role',
                 style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w900,
-                  color: AppTheme.onSurface,
-                  letterSpacing: -1,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                height: 6,
-                width: 64,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.primary, AppTheme.primaryContainer],
-                  ),
-                  borderRadius: BorderRadius.circular(3),
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 16),
+              
+              // Basic Subtitle
               const Text(
                 'Choose how you want to use Shiftease today. You can always switch later in settings.',
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.onSurfaceVariant,
+                  color: Colors.grey, // Standard grey instead of AppTheme
                 ),
               ),
               const SizedBox(height: 48),
 
-              // Role Card 1: Need Help
-              _buildRoleCard(
-                context,
-                title: 'Need Help',
-                subtitle: 'Post a shifting request',
-                icon: Icons.local_shipping,
-                iconColor: AppTheme.primary,
-                iconBgColor: AppTheme.primaryFixed,
-                onTap: () => Navigator.pushNamed(context, '/my_requests'),
+              // Standard Material Card for Role 1
+              Card(
+                elevation: 2,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: const Icon(
+                    Icons.local_shipping,
+                    size: 40,
+                    color: Colors.blue,
+                  ),
+                  title: const Text(
+                    'Need Help',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: const Text('Post a shifting request'),
+                  trailing: const Icon(Icons.chevron_right),
+                  // Original navigation logic preserved exactly
+                  onTap: () => Navigator.pushNamed(context, '/my_requests'),
+                ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-              // Role Card 2: I Want Work
-              _buildRoleCard(
-                context,
-                title: 'I Want Work',
-                subtitle: 'Find and accept jobs',
-                icon: Icons.work,
-                iconColor: AppTheme.tertiary,
-                iconBgColor: AppTheme.tertiaryFixed,
-                onTap: () => Navigator.pushNamed(context, '/worker_dashboard'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRoleCard(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color iconColor,
-    required Color iconBgColor,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: AppTheme.surfaceContainerLowest,
-      borderRadius: BorderRadius.circular(16),
-      elevation: 2,
-      shadowColor: Colors.black.withAlpha(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Row(
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: iconBgColor,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(icon, size: 40, color: iconColor),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.onSurface,
-                      ),
+              // Standard Material Card for Role 2
+              Card(
+                elevation: 2,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: const Icon(
+                    Icons.work,
+                    size: 40,
+                    color: Colors.brown,
+                  ),
+                  title: const Text(
+                    'I Want Work',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppTheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+                  ),
+                  subtitle: const Text('Find and accept jobs'),
+                  trailing: const Icon(Icons.chevron_right),
+                  // Original navigation logic preserved exactly
+                  onTap: () => Navigator.pushNamed(context, '/worker_dashboard'),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppTheme.outlineVariant),
             ],
           ),
         ),
