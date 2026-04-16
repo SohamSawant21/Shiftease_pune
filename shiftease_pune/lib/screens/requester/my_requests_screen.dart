@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/request_provider.dart';
-// Note: Depending on your exact setup, you may need to import your Request model
-// import '../../models/request.dart'; 
 
 class MyRequestsScreen extends StatelessWidget {
   const MyRequestsScreen({super.key});
@@ -13,10 +11,8 @@ class MyRequestsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Shiftease Pune'),
       ),
-      // 1. Wrap the body in a Consumer to connect to your Provider state
       body: Consumer<RequestProvider>(
         builder: (context, provider, child) {
-          // Fetch all requests belonging to the user
           final requests = provider.requests;
 
           return Padding(
@@ -42,7 +38,6 @@ class MyRequestsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 
-                // 2. Dynamically show either the Empty State OR the List of Jobs
                 Expanded(
                   child: requests.isEmpty
                       ? const Center(
@@ -70,7 +65,6 @@ class MyRequestsScreen extends StatelessWidget {
                           itemBuilder: (context, index) {
                             final request = requests[index];
                             
-                            // 3. Simple, beginner-friendly Card for each request
                             return Card(
                               elevation: 2,
                               margin: const EdgeInsets.only(bottom: 12),
@@ -87,7 +81,6 @@ class MyRequestsScreen extends StatelessWidget {
                                 subtitle: Text('Status: ${request.status}'),
                                 trailing: const Icon(Icons.chevron_right),
                                 onTap: () {
-                                  // 4. Feature Intact: Navigate to the status screen, passing the ID
                                   Navigator.pushNamed(
                                     context, 
                                     '/request_status', 
@@ -104,7 +97,6 @@ class MyRequestsScreen extends StatelessWidget {
           );
         },
       ),
-      // Default FloatingActionButton remains the same
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.pushNamed(context, '/create_request');

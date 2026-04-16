@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "673091504645",
+    "project_id": "mad-project-37092",
+    "storage_bucket": "mad-project-37092.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:673091504645:android:edafe1f0b0044543fb6a6c",
+        "android_client_info": {
+          "package_name": "com.example.shiftease_pune"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2EkmzmOLPptkgbx63BxhjKLX9pLxj9mY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

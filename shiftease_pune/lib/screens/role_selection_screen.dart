@@ -28,7 +28,6 @@ class RoleSelectionScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               
-              // Basic Subtitle
               const Text(
                 'Choose how you want to use Shiftease today. You can always switch later in settings.',
                 style: TextStyle(
@@ -38,7 +37,6 @@ class RoleSelectionScreen extends StatelessWidget {
               ),
               const SizedBox(height: 48),
 
-              // Standard Material Card for Role 1
               Card(
                 elevation: 2,
                 child: ListTile(
@@ -64,7 +62,6 @@ class RoleSelectionScreen extends StatelessWidget {
               
               const SizedBox(height: 16),
 
-              // Standard Material Card for Role 2
               Card(
                 elevation: 2,
                 child: ListTile(

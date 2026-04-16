@@ -5,7 +5,6 @@ import '../../services/request_provider.dart';
 import 'package:intl/intl.dart';
 
 class WorkerDashboard extends StatelessWidget {
-  // Ensures this can be called with 'const' in your routes map
   const WorkerDashboard({super.key});
 
   @override
@@ -14,7 +13,6 @@ class WorkerDashboard extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Worker Dashboard'),
       ),
-      // Consumer ensures the data connections remain intact
       body: Consumer<RequestProvider>(
         builder: (context, provider, child) {
           final pendingJobs = provider.pendingRequests;
@@ -34,7 +32,6 @@ class WorkerDashboard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 
-                // Simplified to only show 'All Jobs'
                 const Chip(
                   label: Text('All Jobs'),
                   backgroundColor: Colors.blue,
@@ -42,7 +39,6 @@ class WorkerDashboard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Expanded ListView handles the scrolling and dynamic lists
                 Expanded(
                   child: ListView(
                     children: [
@@ -57,7 +53,6 @@ class WorkerDashboard extends StatelessWidget {
                         const SizedBox(height: 16),
                       ],
 
-                      // --- PENDING JOBS SECTION ---
                       if (pendingJobs.isNotEmpty) ...[
                         const Text(
                           'OPEN REQUESTS',
@@ -67,7 +62,6 @@ class WorkerDashboard extends StatelessWidget {
                         ...pendingJobs.map((job) => _buildBasicJobCard(context, job)),
                       ],
 
-                      // --- EMPTY STATE ---
                       if (pendingJobs.isEmpty && acceptedJobs.isEmpty)
                         const Padding(
                           padding: EdgeInsets.only(top: 40.0),
@@ -99,7 +93,6 @@ class WorkerDashboard extends StatelessWidget {
     );
   }
 
-  // A very basic, standard Card layout for pending jobs
   Widget _buildBasicJobCard(BuildContext context, Request job) {
     return Card(
       elevation: 2,
@@ -156,7 +149,6 @@ class WorkerDashboard extends StatelessWidget {
     );
   }
 
-  // A very basic ListTile layout for accepted jobs
   Widget _buildBasicAcceptedJobCard(BuildContext context, Request job) {
     return Card(
       color: Colors.green.shade50, // Subtle green tint to show it's active

@@ -113,7 +113,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Basic Header Section
               const Text(
                 'Post a New Job',
                 style: TextStyle(
@@ -128,7 +127,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Contact Information Section
               const Text(
                 'Contact Information',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -152,7 +150,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Shift Details Section
               const Text(
                 'Shift Details',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -167,7 +164,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
               ),
               const SizedBox(height: 16),
               
-              // Standard Date & Time Row
               Row(
                 children: [
                   Expanded(
@@ -194,7 +190,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Requirement & Payment Section
               const Text(
                 'Requirement & Payment',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),

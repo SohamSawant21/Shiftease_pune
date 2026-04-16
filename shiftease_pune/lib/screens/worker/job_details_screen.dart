@@ -9,7 +9,6 @@ class JobDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Retrieve the job ID passed from the Worker Dashboard
     final String jobId = ModalRoute.of(context)!.settings.arguments as String;
 
     return Scaffold(
@@ -18,7 +17,6 @@ class JobDetailsScreen extends StatelessWidget {
       ),
       body: Consumer<RequestProvider>(
         builder: (context, provider, child) {
-          // Safely combine lists to find the requested job
           final allJobs = [...provider.pendingRequests, ...provider.acceptedRequests];
           
           final jobIndex = allJobs.indexWhere((j) => j.id == jobId);
@@ -32,7 +30,6 @@ class JobDetailsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Basic Job Info Card
                 Card(
                   elevation: 2,
                   child: Padding(
@@ -58,7 +55,6 @@ class JobDetailsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Basic Customer Info Card
                 Card(
                   elevation: 2,
                   child: ListTile(
@@ -70,7 +66,6 @@ class JobDetailsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Basic Logistics Card
                 Card(
                   elevation: 2,
                   child: Column(
@@ -92,7 +87,6 @@ class JobDetailsScreen extends StatelessWidget {
 
                 const Spacer(),
 
-                // Standard Action Buttons
                 if (job.status == 'Pending') 
                   Row(
                     children: [
@@ -109,7 +103,6 @@ class JobDetailsScreen extends StatelessWidget {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            // CORRECTED: Uses the actual method from your RequestProvider
                             provider.updateRequestStatus(job.id, 'Accepted');
                             Navigator.pop(context);
                           },
@@ -119,7 +112,6 @@ class JobDetailsScreen extends StatelessWidget {
                     ],
                   )
                 else
-                   // If the job is already accepted, just show a simple back button
                    SizedBox(
                      width: double.infinity,
                      child: ElevatedButton(

@@ -4,7 +4,6 @@ import '../models/request.dart';
 class RequestProvider with ChangeNotifier {
   final List<Request> _requests = [];
 
-  /// Returns a new list so every Consumer rebuild gets a new reference.
   List<Request> get requests => _requests.toList();
 
   List<Request> get pendingRequests =>

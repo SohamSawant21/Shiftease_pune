@@ -7,7 +7,6 @@ class RequestStatusScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Retrieve the job ID passed from the My Requests Screen
     final String jobId = ModalRoute.of(context)!.settings.arguments as String;
 
     return Scaffold(
@@ -25,7 +24,6 @@ class RequestStatusScreen extends StatelessWidget {
 
           final request = requests[requestIndex];
           
-          // Basic state checks for the beginner-friendly UI
           bool isAccepted = request.status == 'Accepted';
           bool isCancelled = request.status == 'Cancelled';
 
@@ -49,7 +47,6 @@ class RequestStatusScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Basic Current Phase Card
                 Card(
                   elevation: 2,
                   child: Padding(
@@ -93,7 +90,6 @@ class RequestStatusScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Beginner-friendly Timeline using ListTiles
                 Card(
                   elevation: 2,
                   child: Column(
@@ -125,13 +121,11 @@ class RequestStatusScreen extends StatelessWidget {
 
                 const Spacer(),
 
-                // Simplified Action Section (Removed Modify Inventory)
                 if (!isCancelled)
                   SizedBox(
                     width: double.infinity,
                     child: TextButton(
                       onPressed: () {
-                        // Functionality kept intact: updates status in provider
                         provider.updateRequestStatus(request.id, 'Cancelled');
                       },
                       child: const Text(

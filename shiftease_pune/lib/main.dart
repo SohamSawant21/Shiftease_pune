@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 import 'services/request_provider.dart';
 import 'utils/app_theme.dart';
@@ -12,7 +14,13 @@ import 'screens/requester/request_status_screen.dart';
 import 'screens/worker/worker_dashboard.dart';
 import 'screens/worker/job_details_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(
     MultiProvider(
       providers: [
@@ -45,4 +53,3 @@ class ShifteaseApp extends StatelessWidget {
     );
   }
 }
-
