@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -13,6 +15,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -136,18 +140,67 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const SizedBox(height: 24),
 
                 // Sign Up Button
-                ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      // Temporary navigation logic until Firebase is connected
-                      Navigator.pushReplacementNamed(context, '/role_selection');
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text('Sign Up', style: TextStyle(fontSize: 18)),
-                ),
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              _isLoading = true;
+                            });
+
+                            try {
+                              // 1. Create user in Firebase Auth
+                              final credential = await FirebaseAuth.instance
+                                  .createUserWithEmailAndPassword(
+                                email: _emailController.text.trim(),
+                                password: _passwordController.text.trim(),
+                              );
+
+                              // 2. Save user data to Firestore
+                              await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(credential.user!.uid)
+                                  .set({
+                                'name': _nameController.text.trim(),
+                                'phone': _phoneController.text.trim(),
+                                'email': _emailController.text.trim(),
+                                'role': null,
+                                'createdAt': FieldValue.serverTimestamp(),
+                              });
+
+                              // 3. Navigate
+                              if (mounted) {
+                                Navigator.pushReplacementNamed(context, '/role_selection');
+                              }
+                            } on FirebaseAuthException catch (e) {
+                              String errorMessage = 'An error occurred during sign up.';
+                              if (e.code == 'weak-password') {
+                                errorMessage = 'The password provided is too weak.';
+                              } else if (e.code == 'email-already-in-use') {
+                                errorMessage = 'An account already exists for that email.';
+                              }
+
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(errorMessage)),
+                                );
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                              }
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text('Sign Up', style: TextStyle(fontSize: 18)),
+                      ),
+
                 const SizedBox(height: 16),
 
                 // Navigate back to Login

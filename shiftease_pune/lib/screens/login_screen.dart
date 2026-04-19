@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,6 +12,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -87,19 +90,53 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () {
-                    // Validates the form before navigating
-                    if (_formKey.currentState!.validate()) {
-                      // Temporary navigation logic until Firebase is added
-                      Navigator.pushReplacementNamed(context, '/role_selection');
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text('Login', style: TextStyle(fontSize: 18)),
-                ),
+
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              _isLoading = true;
+                            });
+
+                            try {
+                              await FirebaseAuth.instance.signInWithEmailAndPassword(
+                                email: _emailController.text.trim(),
+                                password: _passwordController.text.trim(),
+                              );
+
+                              if (mounted) {
+                                Navigator.pushReplacementNamed(context, '/role_selection');
+                              }
+                            } on FirebaseAuthException catch (e) {
+                              String errorMessage = 'Login failed. Please check your credentials.';
+                              if (e.code == 'user-not-found' ||
+                                  e.code == 'wrong-password' ||
+                                  e.code == 'invalid-credential') {
+                                errorMessage = 'Incorrect email or password.';
+                              }
+
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(errorMessage)),
+                                );
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                              }
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text('Login', style: TextStyle(fontSize: 18)),
+                      ),
+
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () {
