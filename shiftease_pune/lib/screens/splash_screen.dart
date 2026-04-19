@@ -29,7 +29,7 @@ class SplashScreen extends StatelessWidget {
             
             ElevatedButton(
               onPressed: () {
-                Navigator.pushReplacementNamed(context, '/role_selection');
+                Navigator.pushReplacementNamed(context, '/login');
               },
               child: const Text('Get Started'),
             ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/request_provider.dart';
-import '../../models/request.dart';
 import 'package:intl/intl.dart';
 
 class JobDetailsScreen extends StatelessWidget {
