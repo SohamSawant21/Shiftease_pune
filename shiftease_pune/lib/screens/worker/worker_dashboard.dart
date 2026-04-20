@@ -169,6 +169,10 @@ class WorkerDashboard extends StatelessWidget {
           backgroundColor: Colors.green,
           side: BorderSide.none,
         ),
+        // ADDED: Make the card clickable
+        onTap: () {
+          Navigator.pushNamed(context, '/accepted_job_details', arguments: doc.id);
+        },
       ),
     );
   }
