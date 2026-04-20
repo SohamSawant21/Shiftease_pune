@@ -96,13 +96,22 @@ class MyRequestsScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        trailing: Chip(
-                          label: Text(
-                            data['status'] ?? 'Pending',
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                          backgroundColor: data['status'] == 'Accepted' ? Colors.green : Colors.orange,
-                          side: BorderSide.none,
+                        trailing: Builder(
+                          builder: (context) {
+                            final status = data['status'] ?? 'Pending';
+                            Color statusColor = Colors.orange; // Default for Pending
+                            if (status == 'Accepted') statusColor = Colors.green;
+                            if (status == 'Completed') statusColor = Colors.blue;
+
+                            return Chip(
+                              label: Text(
+                                status,
+                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                              ),
+                              backgroundColor: statusColor,
+                              side: BorderSide.none,
+                            );
+                          }
                         ),
                         onTap: () {
                           // Pass the Firebase Document ID to the status screen

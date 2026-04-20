@@ -46,13 +46,13 @@ class RequestStatusScreen extends StatelessWidget {
                 _buildJobDetailsCard(requestData),
                 const SizedBox(height: 16),
 
-                // 3. Worker Details (Only show if Accepted and workerId exists)
-                if (status == 'Accepted' && workerId != null)
+                // 3. Worker Details (Show if Accepted OR Completed)
+                if ((status == 'Accepted' || status == 'Completed') && workerId != null)
                   _buildWorkerDetails(workerId),
 
                 const SizedBox(height: 32),
 
-                // 4. Cancel Button (Only allow cancellation if still Pending)
+                // 4. Dynamic Action Buttons based on Status
                 if (status == 'Pending')
                   SizedBox(
                     width: double.infinity,
@@ -63,6 +63,20 @@ class RequestStatusScreen extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
                         side: const BorderSide(color: Colors.red),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
+                  )
+                else if (status == 'Accepted')
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _markAsCompleted(context, jobId),
+                      icon: const Icon(Icons.verified),
+                      label: const Text('Mark Job as Completed', style: TextStyle(fontSize: 16)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                     ),
@@ -77,24 +91,35 @@ class RequestStatusScreen extends StatelessWidget {
 
   // Helper Widget: Visual representation of the job's current status
   Widget _buildStatusCard(String status) {
+    IconData icon;
+    Color color;
+    String subtitle;
+
+    // Dynamically change UI based on status
+    if (status == 'Completed') {
+      icon = Icons.done_all;
+      color = Colors.blue;
+      subtitle = 'This job has been successfully completed.';
+    } else if (status == 'Accepted') {
+      icon = Icons.check_circle;
+      color = Colors.green;
+      subtitle = 'A worker has accepted your request!';
+    } else {
+      icon = Icons.hourglass_empty;
+      color = Colors.orange;
+      subtitle = 'Waiting for a local helper to accept...';
+    }
+
     return Card(
       elevation: 2,
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
-        leading: Icon(
-          status == 'Accepted' ? Icons.check_circle : Icons.hourglass_empty,
-          color: status == 'Accepted' ? Colors.green : Colors.orange,
-          size: 40,
-        ),
+        leading: Icon(icon, color: color, size: 40),
         title: Text(
           'Status: $status',
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(
-          status == 'Accepted'
-              ? 'A worker has accepted your request!'
-              : 'Waiting for a local helper to accept...',
-        ),
+        subtitle: Text(subtitle),
       ),
     );
   }
@@ -184,6 +209,54 @@ class RequestStatusScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  // NEW Helper Method: Marks the job as completed in Firestore
+  Future<void> _markAsCompleted(BuildContext context, String jobId) async {
+    // 1. Show a confirmation dialog first
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Complete Job?'),
+        content: const Text('Are you sure the shifting is completely done? This will close the job and finalize it.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false), 
+            child: const Text('No, Go Back')
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green, 
+              foregroundColor: Colors.white
+            ),
+            child: const Text('Yes, Mark Completed'),
+          ),
+        ],
+      ),
+    );
+
+    // If user pressed 'No' or clicked outside the dialog, stop here
+    if (confirm != true) return;
+
+    // 2. Update Firestore if confirmed
+    try {
+      await FirebaseFirestore.instance.collection('requests').doc(jobId).update({
+        'status': 'Completed',
+      });
+      
+      if (!context.mounted) return;
+      
+      Navigator.pop(context); // Go back to the dashboard
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Job successfully marked as Completed!')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating job: $e')),
+      );
+    }
   }
 
   // Helper Method: Deletes the document from Firestore if cancelled
