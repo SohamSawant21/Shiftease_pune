@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../models/request.dart';
-import '../../services/request_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 class WorkerDashboard extends StatelessWidget {
@@ -9,6 +8,8 @@ class WorkerDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Worker Dashboard'),
@@ -22,86 +23,79 @@ class WorkerDashboard extends StatelessWidget {
           ),
         ],
       ),
-      body: Consumer<RequestProvider>(
-        builder: (context, provider, child) {
-          final pendingJobs = provider.pendingRequests;
-          final acceptedJobs = provider.acceptedRequests;
+      body: currentUser == null
+          ? const Center(child: Text('Please log in.'))
+          : StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('requests').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
 
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Available Jobs',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                const Chip(
-                  label: Text('All Jobs'),
-                  backgroundColor: Colors.blue,
-                  labelStyle: TextStyle(color: Colors.white),
-                ),
-                const SizedBox(height: 16),
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                   return _buildEmptyState();
+                }
 
-                Expanded(
-                  child: ListView(
-                    children: [
-                      if (acceptedJobs.isNotEmpty) ...[
-                        const Text(
-                          'MY ACTIVE JOBS',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 8),
-                        ...acceptedJobs.map((job) => _buildBasicAcceptedJobCard(context, job)),
-                        const SizedBox(height: 16),
-                      ],
+                final allDocs = snapshot.data!.docs;
 
-                      if (pendingJobs.isNotEmpty) ...[
-                        const Text(
-                          'OPEN REQUESTS',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 8),
-                        ...pendingJobs.map((job) => _buildBasicJobCard(context, job)),
-                      ],
+                // Filter 1: Pending jobs NOT created by this exact user
+                final pendingJobs = allDocs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return data['status'] == 'Pending' && data['requesterId'] != currentUser.uid;
+                }).toList();
 
-                      if (pendingJobs.isEmpty && acceptedJobs.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 40.0),
-                          child: Center(
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.work_off_outlined,
-                                  size: 60,
-                                  color: Colors.grey,
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'No available jobs at the moment.',
-                                  style: TextStyle(color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                // Filter 2: Jobs that THIS user has accepted
+                final acceptedJobs = allDocs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return data['status'] == 'Accepted' && data['workerId'] == currentUser.uid;
+                }).toList();
+
+                if (pendingJobs.isEmpty && acceptedJobs.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                return ListView(
+                  padding: const EdgeInsets.all(16.0),
+                  children: [
+                    if (acceptedJobs.isNotEmpty) ...[
+                      const Text('My Accepted Jobs', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      ...acceptedJobs.map((doc) => _buildBasicAcceptedJobCard(context, doc)),
+                      const SizedBox(height: 24),
                     ],
-                  ),
-                ),
-              ],
+                    if (pendingJobs.isNotEmpty) ...[
+                      const Text('Available Jobs', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      ...pendingJobs.map((doc) => _buildBasicJobCard(context, doc)),
+                    ],
+                  ],
+                );
+              },
             ),
-          );
-        },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.work_off_outlined, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text('No available jobs at the moment.', style: TextStyle(color: Colors.grey, fontSize: 16)),
+        ],
       ),
     );
   }
 
-  Widget _buildBasicJobCard(BuildContext context, Request job) {
+  Widget _buildBasicJobCard(BuildContext context, QueryDocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    final DateTime dateTime = (data['dateTime'] as Timestamp).toDate();
+    final double payment = (data['payment'] as num).toDouble();
+
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
@@ -111,7 +105,7 @@ class WorkerDashboard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              job.name,
+              data['name'] ?? 'Job',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -119,7 +113,7 @@ class WorkerDashboard extends StatelessWidget {
               children: [
                 const Icon(Icons.location_on, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
-                Expanded(child: Text(job.location)),
+                Expanded(child: Text(data['location'] ?? '')),
               ],
             ),
             const SizedBox(height: 4),
@@ -127,7 +121,7 @@ class WorkerDashboard extends StatelessWidget {
               children: [
                 const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
-                Text(DateFormat('MMM dd, hh:mm a').format(job.dateTime)),
+                Text(DateFormat('MMM dd, hh:mm a').format(dateTime)),
               ],
             ),
             const Divider(height: 24),
@@ -135,7 +129,7 @@ class WorkerDashboard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '₹${job.payment.toStringAsFixed(0)}',
+                  '₹${payment.toStringAsFixed(0)}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -144,7 +138,8 @@ class WorkerDashboard extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, '/job_details', arguments: job.id);
+                    // Pass the Firebase Document ID to the details screen
+                    Navigator.pushNamed(context, '/job_details', arguments: doc.id);
                   },
                   child: const Text('View Job'),
                 ),
@@ -156,19 +151,23 @@ class WorkerDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildBasicAcceptedJobCard(BuildContext context, Request job) {
+  Widget _buildBasicAcceptedJobCard(BuildContext context, QueryDocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    final double payment = (data['payment'] as num).toDouble();
+
     return Card(
       color: Colors.green.shade50,
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: const Icon(Icons.check_circle, color: Colors.green, size: 40),
-        title: Text(job.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('${job.location}\n₹${job.payment.toStringAsFixed(0)}'),
+        title: Text(data['name'] ?? 'Job', style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text('${data['location']}\n₹${payment.toStringAsFixed(0)}'),
         isThreeLine: true,
         trailing: const Chip(
           label: Text('Accepted', style: TextStyle(color: Colors.white, fontSize: 12)),
           backgroundColor: Colors.green,
+          side: BorderSide.none,
         ),
       ),
     );

@@ -1,140 +1,69 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../services/request_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class RequestStatusScreen extends StatelessWidget {
   const RequestStatusScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Safely retrieve the jobId passed from the My Requests screen
     final String jobId = ModalRoute.of(context)!.settings.arguments as String;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Request Status'),
       ),
-      body: Consumer<RequestProvider>(
-        builder: (context, provider, child) {
-          final requests = provider.requests;
-          final requestIndex = requests.indexWhere((r) => r.id == jobId);
-
-          if (requestIndex == -1) {
-            return const Center(child: Text('Request not found.'));
+      // Listen to the specific request document in Firestore
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('requests').doc(jobId).snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text('Request not found or has been deleted.'));
           }
 
-          final request = requests[requestIndex];
-          
-          bool isAccepted = request.status == 'Accepted';
-          bool isCancelled = request.status == 'Cancelled';
+          // Extract the data
+          final requestData = snapshot.data!.data() as Map<String, dynamic>;
+          final String status = requestData['status'] ?? 'Pending';
+          final String? workerId = requestData['workerId'];
 
-          return Padding(
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Standard Header
-                const Text(
-                  'Request Status',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Tracking your relocation journey through the heart of Pune.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 24),
-
-                Card(
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'CURRENT PHASE',
-                          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              isCancelled ? Icons.cancel : Icons.circle,
-                              color: isCancelled ? Colors.red : Colors.blue,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              request.status,
-                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                            ),
-                            const Spacer(),
-                            const Icon(Icons.local_shipping, color: Colors.blue, size: 32),
-                          ],
-                        ),
-                        const Divider(height: 32),
-                        Text('Request ID:  ${request.id}'),
-                        const SizedBox(height: 8),
-                        const Text('Service Type:  Shifting'),
-                        const SizedBox(height: 16),
-                        const Text(
-                          '"A professional is assigned to your request"',
-                          style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                // 1. Status Indicator
+                _buildStatusCard(status),
                 const SizedBox(height: 16),
 
-                Card(
-                  elevation: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text(
-                          'Activity Timeline',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.check_circle, color: Colors.blue),
-                        title: const Text('Request Submitted', style: TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: const Text('Waiting for worker...'),
-                      ),
-                      ListTile(
-                        leading: Icon(
-                          isAccepted ? Icons.check_circle : Icons.radio_button_unchecked,
-                          color: isAccepted ? Colors.blue : Colors.grey.shade400,
-                        ),
-                        title: const Text('Worker Assigned', style: TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: const Text('Awaiting professional confirmation'),
-                      ),
-                    ],
-                  ),
-                ),
+                // 2. Job Details Summary
+                _buildJobDetailsCard(requestData),
+                const SizedBox(height: 16),
 
-                const Spacer(),
+                // 3. Worker Details (Only show if Accepted and workerId exists)
+                if (status == 'Accepted' && workerId != null)
+                  _buildWorkerDetails(workerId),
 
-                if (!isCancelled)
+                const SizedBox(height: 32),
+
+                // 4. Cancel Button (Only allow cancellation if still Pending)
+                if (status == 'Pending')
                   SizedBox(
                     width: double.infinity,
-                    child: TextButton(
-                      onPressed: () {
-                        provider.updateRequestStatus(request.id, 'Cancelled');
-                      },
-                      child: const Text(
-                        'Cancel Request',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    child: OutlinedButton.icon(
+                      onPressed: () => _cancelRequest(context, jobId),
+                      icon: const Icon(Icons.cancel_outlined),
+                      label: const Text('Cancel Request', style: TextStyle(fontSize: 16)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                     ),
                   ),
@@ -144,5 +73,135 @@ class RequestStatusScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  // Helper Widget: Visual representation of the job's current status
+  Widget _buildStatusCard(String status) {
+    return Card(
+      elevation: 2,
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: Icon(
+          status == 'Accepted' ? Icons.check_circle : Icons.hourglass_empty,
+          color: status == 'Accepted' ? Colors.green : Colors.orange,
+          size: 40,
+        ),
+        title: Text(
+          'Status: $status',
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          status == 'Accepted'
+              ? 'A worker has accepted your request!'
+              : 'Waiting for a local helper to accept...',
+        ),
+      ),
+    );
+  }
+
+  // Helper Widget: Shows what the requester originally posted
+  Widget _buildJobDetailsCard(Map<String, dynamic> data) {
+    final DateTime dateTime = (data['dateTime'] as Timestamp).toDate();
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Job Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Divider(),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.work_outline),
+              title: Text(data['name'] ?? 'Job'),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.location_on_outlined),
+              title: Text(data['location'] ?? 'Location'),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.calendar_today),
+              title: Text(DateFormat('MMM dd, yyyy - hh:mm a').format(dateTime)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper Widget: Fetches and displays the assigned worker's profile
+  Widget _buildWorkerDetails(String workerId) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('users').doc(workerId).get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return const SizedBox();
+        }
+
+        final workerData = snapshot.data!.data() as Map<String, dynamic>;
+
+        return Card(
+          elevation: 2,
+          color: Colors.green.shade50,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.handshake, color: Colors.green),
+                    SizedBox(width: 8),
+                    Text('Worker Contact Info', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
+                  ],
+                ),
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.person_outline),
+                  title: Text(workerData['name'] ?? 'Worker Name', style: const TextStyle(fontSize: 18)),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.phone),
+                  title: Text(workerData['phone'] ?? 'No phone number provided', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  subtitle: const Text('Call to coordinate the shift'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Helper Method: Deletes the document from Firestore if cancelled
+  Future<void> _cancelRequest(BuildContext context, String jobId) async {
+    try {
+      await FirebaseFirestore.instance.collection('requests').doc(jobId).delete();
+      
+      if (!context.mounted) return;
+      
+      Navigator.pop(context); // Go back to the dashboard
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Request cancelled successfully.')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error cancelling request: $e')),
+      );
+    }
   }
 }
