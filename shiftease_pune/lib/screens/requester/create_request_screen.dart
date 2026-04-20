@@ -55,14 +55,13 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
 
-    if (date != null) {
-      if (!mounted) return;
+    if (date != null && mounted) {
       final time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.now(),
       );
 
-      if (time != null) {
+      if (time != null && mounted) {
         setState(() {
           _selectedDate = date;
           _selectedTime = time;
@@ -73,68 +72,72 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
 
   Future<void> _submit() async {
     final formState = _formKey.currentState;
+    
+    // 1. Check if all text fields pass their individual validation rules
     if (formState == null || !formState.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all required fields')),
+        const SnackBar(content: Text('Please correct the errors in the form')),
       );
       return;
     }
 
+    // 2. Ensure Date and Time are selected
     if (_selectedDate == null || _selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select Date & Time')),
+       ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a valid date and time')),
       );
       return;
     }
 
-    // Start loading spinner
+    // 3. Ensure the selected Date and Time are not in the past
+    final selectedDateTime = DateTime(
+      _selectedDate!.year,
+      _selectedDate!.month,
+      _selectedDate!.day,
+      _selectedTime!.hour,
+      _selectedTime!.minute,
+    );
+
+    if (selectedDateTime.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The selected time cannot be in the past')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // 1. Get the current logged-in user
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) throw Exception("No user logged in");
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        // Post data to Firestore
+        await FirebaseFirestore.instance.collection('requests').add({
+          'name': _nameController.text.trim(),
+          'location': _locationController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'duration': int.parse(_durationController.text.trim()),
+          'payment': double.parse(_paymentController.text.trim()),
+          'helpers': _helpersCount,
+          'dateTime': Timestamp.fromDate(selectedDateTime),
+          'status': 'Pending',
+          'requesterId': currentUser.uid,
+        });
 
-      // 2. Combine date and time
-      final combinedDateTime = DateTime(
-        _selectedDate!.year,
-        _selectedDate!.month,
-        _selectedDate!.day,
-        _selectedTime!.hour,
-        _selectedTime!.minute,
-      );
-
-      // 3. Save to Firestore
-      await FirebaseFirestore.instance.collection('requests').add({
-        'name': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'location': _locationController.text.trim(),
-        'duration': int.tryParse(_durationController.text.trim()) ?? 1,
-        'helpers': _helpersCount,
-        'payment': double.tryParse(_paymentController.text.trim()) ?? 0.0,
-        'dateTime': Timestamp.fromDate(combinedDateTime),
-        'status': 'Pending', // Setting the default status
-        'requesterId': user.uid, // Attaching the creator's ID
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      if (!mounted) return;
-      
-      // Success Message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request posted successfully!')),
-      );
-      
-      // Navigate back to the dashboard
-      Navigator.pop(context);
-
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Request posted successfully!')),
+          );
+          Navigator.pop(context); // Go back to the dashboard
+        }
+      }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error posting request: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error posting request: $e')),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -150,134 +153,164 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       appBar: AppBar(
         title: const Text('Create Request'),
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Post a New Job',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                "Tell us what you need moved. We'll connect you with the best local helpers in Pune within minutes.",
-                style: TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 32),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Job Title / Item Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value!.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _locationController,
-                decoration: const InputDecoration(
-                  labelText: 'Location (e.g., Baner, Viman Nagar)',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value!.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Contact Phone Number',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value!.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _durationController,
-                      keyboardType: TextInputType.number,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Post a New Job',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Tell us what you need moved. We'll connect you with the best local helpers in Pune within minutes.",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 32),
+                    TextFormField(
+                      controller: _nameController,
                       decoration: const InputDecoration(
-                        labelText: 'Estimated Hours',
+                        labelText: 'Job Title / Item Name',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty ? 'Required' : null,
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _paymentController,
-                      keyboardType: TextInputType.number,
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _locationController,
                       decoration: const InputDecoration(
-                        labelText: 'Total Pay (₹)',
+                        labelText: 'Location (e.g., Baner, Viman Nagar)',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty ? 'Required' : null,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Number of Helpers needed:', style: TextStyle(fontSize: 16)),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: () {
-                          if (_helpersCount > 1) {
-                            setState(() => _helpersCount--);
-                          }
-                        },
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Contact Phone Number',
+                        border: OutlineInputBorder(),
                       ),
-                      Text('$_helpersCount', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: () {
-                          setState(() => _helpersCount++);
-                        },
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) return 'Required';
+                        // Ensures the string only contains numbers and is exactly 10 digits long
+                        final isNumeric = RegExp(r'^[0-9]+$').hasMatch(value);
+                        if (!isNumeric || value.trim().length != 10) {
+                          return 'Enter a valid 10-digit number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _durationController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Estimated Hours',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) return 'Required';
+                              final parsed = int.tryParse(value.trim());
+                              if (parsed == null || parsed <= 0) {
+                                return 'Enter a valid positive number';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _paymentController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Total Pay (₹)',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) return 'Required';
+                              final parsed = double.tryParse(value.trim());
+                              if (parsed == null || parsed <= 0) {
+                                return 'Enter a valid positive amount';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Number of Helpers needed:',
+                            style: TextStyle(fontSize: 16)),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle_outline),
+                              onPressed: () {
+                                if (_helpersCount > 1) {
+                                  setState(() => _helpersCount--);
+                                }
+                              },
+                            ),
+                            Text('$_helpersCount',
+                                style: const TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle_outline),
+                              onPressed: () {
+                                setState(() => _helpersCount++);
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formattedDateTime,
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                        ElevatedButton.icon(
+                          onPressed: _pickDateTime,
+                          icon: const Icon(Icons.calendar_month),
+                          label: const Text('Pick Date'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 48),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _submit,
+                        child: const Text('Submit Request',
+                            style: TextStyle(fontSize: 18)),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(_formattedDateTime, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  ElevatedButton.icon(
-                    onPressed: _pickDateTime,
-                    icon: const Icon(Icons.calendar_month),
-                    label: const Text('Pick Date'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 48),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _submit,
-                  child: const Text('Submit Request', style: TextStyle(fontSize: 18)),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }
