@@ -12,6 +12,15 @@ class WorkerDashboard extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Worker Dashboard'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_horiz, size: 28),
+            tooltip: 'Switch Role',
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/role_selection');
+            },
+          ),
+        ],
       ),
       body: Consumer<RequestProvider>(
         builder: (context, provider, child) {
@@ -42,7 +51,6 @@ class WorkerDashboard extends StatelessWidget {
                 Expanded(
                   child: ListView(
                     children: [
-                      // --- ACCEPTED JOBS SECTION ---
                       if (acceptedJobs.isNotEmpty) ...[
                         const Text(
                           'MY ACTIVE JOBS',
@@ -136,7 +144,6 @@ class WorkerDashboard extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // Feature intact: navigates to details passing the job ID
                     Navigator.pushNamed(context, '/job_details', arguments: job.id);
                   },
                   child: const Text('View Job'),
@@ -151,7 +158,7 @@ class WorkerDashboard extends StatelessWidget {
 
   Widget _buildBasicAcceptedJobCard(BuildContext context, Request job) {
     return Card(
-      color: Colors.green.shade50, // Subtle green tint to show it's active
+      color: Colors.green.shade50,
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(

@@ -10,6 +10,15 @@ class MyRequestsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Shiftease Pune'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_horiz, size: 28),
+            tooltip: 'Switch Role',
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/role_selection');
+            },
+          ),
+        ],
       ),
       body: Consumer<RequestProvider>(
         builder: (context, provider, child) {
@@ -20,7 +29,6 @@ class MyRequestsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Basic Header
                 const Text(
                   'My Requests',
                   style: TextStyle(
@@ -37,7 +45,7 @@ class MyRequestsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 Expanded(
                   child: requests.isEmpty
                       ? const Center(
@@ -64,26 +72,26 @@ class MyRequestsScreen extends StatelessWidget {
                           itemCount: requests.length,
                           itemBuilder: (context, index) {
                             final request = requests[index];
-                            
+
                             return Card(
                               elevation: 2,
                               margin: const EdgeInsets.only(bottom: 12),
                               child: ListTile(
                                 leading: const Icon(
-                                  Icons.local_shipping, 
-                                  color: Colors.blue, 
-                                  size: 32
+                                  Icons.local_shipping,
+                                  color: Colors.blue,
+                                  size: 32,
                                 ),
                                 title: Text(
-                                  request.location, 
-                                  style: const TextStyle(fontWeight: FontWeight.bold)
+                                  request.location,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Text('Status: ${request.status}'),
                                 trailing: const Icon(Icons.chevron_right),
                                 onTap: () {
                                   Navigator.pushNamed(
-                                    context, 
-                                    '/request_status', 
+                                    context,
+                                    '/request_status',
                                     arguments: request.id,
                                   );
                                 },
