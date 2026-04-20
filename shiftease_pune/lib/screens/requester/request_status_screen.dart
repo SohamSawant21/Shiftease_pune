@@ -1,164 +1,96 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RequestStatusScreen extends StatelessWidget {
   const RequestStatusScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    // Safely retrieve the jobId passed from the My Requests screen
-    final String jobId = ModalRoute.of(context)!.settings.arguments as String;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Request Status'),
-      ),
-      // Listen to the specific request document in Firestore
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('requests').doc(jobId).snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            return const Center(child: Text('Request not found or has been deleted.'));
-          }
-
-          // Extract the data
-          final requestData = snapshot.data!.data() as Map<String, dynamic>;
-          final String status = requestData['status'] ?? 'Pending';
-          final String? workerId = requestData['workerId'];
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Status Indicator
-                _buildStatusCard(status),
-                const SizedBox(height: 16),
-
-                // 2. Job Details Summary
-                _buildJobDetailsCard(requestData),
-                const SizedBox(height: 16),
-
-                // 3. Worker Details (Show if Accepted OR Completed)
-                if ((status == 'Accepted' || status == 'Completed') && workerId != null)
-                  _buildWorkerDetails(workerId),
-
-                const SizedBox(height: 32),
-
-                // 4. Dynamic Action Buttons based on Status
-                if (status == 'Pending')
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _cancelRequest(context, jobId),
-                      icon: const Icon(Icons.cancel_outlined),
-                      label: const Text('Cancel Request', style: TextStyle(fontSize: 16)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                  )
-                else if (status == 'Accepted')
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _markAsCompleted(context, jobId),
-                      icon: const Icon(Icons.verified),
-                      label: const Text('Mark Job as Completed', style: TextStyle(fontSize: 16)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+  // NEW: The logic to launch the native phone dialer
+  Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open the phone dialer.')),
           );
-        },
-      ),
-    );
-  }
-
-  // Helper Widget: Visual representation of the job's current status
-  Widget _buildStatusCard(String status) {
-    IconData icon;
-    Color color;
-    String subtitle;
-
-    // Dynamically change UI based on status
-    if (status == 'Completed') {
-      icon = Icons.done_all;
-      color = Colors.blue;
-      subtitle = 'This job has been successfully completed.';
-    } else if (status == 'Accepted') {
-      icon = Icons.check_circle;
-      color = Colors.green;
-      subtitle = 'A worker has accepted your request!';
-    } else {
-      icon = Icons.hourglass_empty;
-      color = Colors.orange;
-      subtitle = 'Waiting for a local helper to accept...';
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('An error occurred while launching the dialer.')),
+        );
+      }
     }
-
-    return Card(
-      elevation: 2,
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: Icon(icon, color: color, size: 40),
-        title: Text(
-          'Status: $status',
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(subtitle),
-      ),
-    );
   }
 
-  // Helper Widget: Shows what the requester originally posted
-  Widget _buildJobDetailsCard(Map<String, dynamic> data) {
-    final DateTime dateTime = (data['dateTime'] as Timestamp).toDate();
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Job Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const Divider(),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.work_outline),
-              title: Text(data['name'] ?? 'Job'),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.location_on_outlined),
-              title: Text(data['location'] ?? 'Location'),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.calendar_today),
-              title: Text(DateFormat('MMM dd, yyyy - hh:mm a').format(dateTime)),
-            ),
-          ],
-        ),
-      ),
-    );
+  Future<void> _cancelRequest(BuildContext context, String jobId) async {
+    try {
+      await FirebaseFirestore.instance.collection('requests').doc(jobId).delete();
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Request cancelled successfully.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error cancelling request: $e')),
+        );
+      }
+    }
   }
 
-  // Helper Widget: Fetches and displays the assigned worker's profile
-  Widget _buildWorkerDetails(String workerId) {
+  Future<void> _markAsCompleted(BuildContext context, String jobId) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Complete Job?'),
+        content: const Text('Are you sure the shifting is completely done? This will close the job and finalize it.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('No, Go Back'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Yes, Mark Completed'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await FirebaseFirestore.instance.collection('requests').doc(jobId).update({
+          'status': 'Completed',
+        });
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Job marked as completed.')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error updating status: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Widget _buildWorkerDetails(BuildContext context, String workerId) {
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance.collection('users').doc(workerId).get(),
       builder: (context, snapshot) {
@@ -174,36 +106,21 @@ class RequestStatusScreen extends StatelessWidget {
           return const SizedBox();
         }
 
-        final workerData = snapshot.data!.data() as Map<String, dynamic>;
+        final userData = snapshot.data!.data() as Map<String, dynamic>;
+        final phone = userData['phone'] ?? 'No phone provided';
 
         return Card(
-          elevation: 2,
-          color: Colors.green.shade50,
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.handshake, color: Colors.green),
-                    SizedBox(width: 8),
-                    Text('Worker Contact Info', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
-                  ],
-                ),
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.person_outline),
-                  title: Text(workerData['name'] ?? 'Worker Name', style: const TextStyle(fontSize: 18)),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.phone),
-                  title: Text(workerData['phone'] ?? 'No phone number provided', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  subtitle: const Text('Call to coordinate the shift'),
-                ),
-              ],
+          child: ListTile(
+            leading: const CircleAvatar(
+              backgroundColor: Colors.green,
+              child: Icon(Icons.engineering, color: Colors.white),
+            ),
+            title: Text(userData['name'] ?? 'Worker'),
+            subtitle: Text(phone),
+            // NEW: The clickable phone icon
+            trailing: IconButton(
+              icon: const Icon(Icons.phone, color: Colors.blue),
+              onPressed: () => _makePhoneCall(context, phone),
             ),
           ),
         );
@@ -211,70 +128,101 @@ class RequestStatusScreen extends StatelessWidget {
     );
   }
 
-  // NEW Helper Method: Marks the job as completed in Firestore
-  Future<void> _markAsCompleted(BuildContext context, String jobId) async {
-    // 1. Show a confirmation dialog first
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Complete Job?'),
-        content: const Text('Are you sure the shifting is completely done? This will close the job and finalize it.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false), 
-            child: const Text('No, Go Back')
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green, 
-              foregroundColor: Colors.white
+  @override
+  Widget build(BuildContext context) {
+    final String jobId = ModalRoute.of(context)!.settings.arguments as String;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Request Status')),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('requests').doc(jobId).snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text('Request not found.'));
+          }
+
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          final status = data['status'] ?? 'Pending';
+          final dateTime = (data['dateTime'] as Timestamp).toDate();
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Card(
+                  color: status == 'Accepted' ? Colors.green.shade50 : Colors.orange.shade50,
+                  child: ListTile(
+                    leading: Icon(
+                      status == 'Accepted' ? Icons.check_circle : Icons.access_time,
+                      color: status == 'Accepted' ? Colors.green : Colors.orange,
+                      size: 32,
+                    ),
+                    title: Text('Status: $status', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    subtitle: Text(status == 'Accepted' ? 'A worker has accepted your job!' : 'Waiting for workers...'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Job Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const Divider(),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.work_outline),
+                          title: Text(data['name'] ?? 'Job'),
+                        ),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.location_on_outlined),
+                          title: Text(data['location'] ?? 'Location'),
+                        ),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.calendar_today),
+                          title: Text(DateFormat('MMM dd, yyyy - hh:mm a').format(dateTime)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (status == 'Accepted' && data['workerId'] != null) ...[
+                  const Text('Assigned Worker', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  _buildWorkerDetails(context, data['workerId']),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: () => _markAsCompleted(context, jobId),
+                    icon: const Icon(Icons.done_all),
+                    label: const Text('Mark as Completed'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
+                ],
+                if (status == 'Pending') ...[
+                  const SizedBox(height: 32),
+                  TextButton.icon(
+                    onPressed: () => _cancelRequest(context, jobId),
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    label: const Text('Cancel Request', style: TextStyle(color: Colors.red)),
+                  ),
+                ]
+              ],
             ),
-            child: const Text('Yes, Mark Completed'),
-          ),
-        ],
+          );
+        },
       ),
     );
-
-    // If user pressed 'No' or clicked outside the dialog, stop here
-    if (confirm != true) return;
-
-    // 2. Update Firestore if confirmed
-    try {
-      await FirebaseFirestore.instance.collection('requests').doc(jobId).update({
-        'status': 'Completed',
-      });
-      
-      if (!context.mounted) return;
-      
-      Navigator.pop(context); // Go back to the dashboard
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Job successfully marked as Completed!')),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating job: $e')),
-      );
-    }
-  }
-
-  // Helper Method: Deletes the document from Firestore if cancelled
-  Future<void> _cancelRequest(BuildContext context, String jobId) async {
-    try {
-      await FirebaseFirestore.instance.collection('requests').doc(jobId).delete();
-      
-      if (!context.mounted) return;
-      
-      Navigator.pop(context); // Go back to the dashboard
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request cancelled successfully.')),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error cancelling request: $e')),
-      );
-    }
   }
 }
