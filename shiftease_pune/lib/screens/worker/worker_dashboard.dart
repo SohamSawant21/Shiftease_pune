@@ -41,13 +41,11 @@ class WorkerDashboard extends StatelessWidget {
 
                 final allDocs = snapshot.data!.docs;
 
-                // Filter 1: Pending jobs NOT created by this exact user
                 final pendingJobs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   return data['status'] == 'Pending' && data['requesterId'] != currentUser.uid;
                 }).toList();
 
-                // Filter 2: Jobs that THIS user has accepted
                 final acceptedJobs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   return data['status'] == 'Accepted' && data['workerId'] == currentUser.uid;
@@ -169,7 +167,6 @@ class WorkerDashboard extends StatelessWidget {
           backgroundColor: Colors.green,
           side: BorderSide.none,
         ),
-        // ADDED: Make the card clickable
         onTap: () {
           Navigator.pushNamed(context, '/accepted_job_details', arguments: doc.id);
         },

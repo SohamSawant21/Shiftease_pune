@@ -172,7 +172,6 @@ class RequestStatusScreen extends StatelessWidget {
           final String status = data['status'] ?? 'Pending';
           final DateTime dateTime = (data['dateTime'] as Timestamp).toDate();
           
-          // Dynamic UI logic based on Status
           Color statusColor = Colors.orange;
           IconData statusIcon = Icons.access_time;
           String subtitle = 'Waiting for workers...';

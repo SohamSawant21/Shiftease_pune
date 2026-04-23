@@ -8,14 +8,12 @@ class JobDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Safely retrieve the jobId passed from the Worker Dashboard
     final String jobId = ModalRoute.of(context)!.settings.arguments as String;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Job Details'),
       ),
-      // Listen to the specific document in Firestore
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('requests').doc(jobId).snapshots(),
         builder: (context, snapshot) {
@@ -29,7 +27,6 @@ class JobDetailsScreen extends StatelessWidget {
             return const Center(child: Text('Job not found or has been deleted.'));
           }
 
-          // Extract the data
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final DateTime dateTime = (data['dateTime'] as Timestamp).toDate();
           final double payment = (data['payment'] as num).toDouble();
@@ -40,7 +37,6 @@ class JobDetailsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Primary Job Info Card
                 Card(
                   elevation: 2,
                   child: Padding(
@@ -85,7 +81,6 @@ class JobDetailsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 
-                // Secondary Requirements Card
                 Card(
                   elevation: 2,
                   child: Column(
@@ -106,7 +101,6 @@ class JobDetailsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
 
-                // Action Buttons
                 if (status == 'Pending')
                   Row(
                     children: [
@@ -155,16 +149,14 @@ class JobDetailsScreen extends StatelessWidget {
     );
   }
 
-  // Helper method to write to Firestore when accepted
   Future<void> _acceptJob(BuildContext context, String jobId) async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) throw Exception('You must be logged in to accept jobs.');
 
-      // Update the specific document in the 'requests' collection
       await FirebaseFirestore.instance.collection('requests').doc(jobId).update({
         'status': 'Accepted',
-        'workerId': currentUser.uid, // Attach the worker's ID to the job
+        'workerId': currentUser.uid, 
       });
 
       if (!context.mounted) return;
@@ -173,7 +165,6 @@ class JobDetailsScreen extends StatelessWidget {
         const SnackBar(content: Text('Job Accepted successfully!')),
       );
       
-      // Send the worker back to the dashboard where the job will now appear in their "Accepted Jobs" list
       Navigator.pop(context);
       
     } catch (e) {

@@ -19,7 +19,6 @@ class RequesterHistoryScreen extends StatelessWidget {
         title: const Text('Job History'),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        // Removed .orderBy() to avoid Firestore Composite Index errors
         stream: FirebaseFirestore.instance
             .collection('requests')
             .where('requesterId', isEqualTo: currentUser.uid)
@@ -37,13 +36,11 @@ class RequesterHistoryScreen extends StatelessWidget {
             return const Center(child: Text('No job history found.'));
           }
 
-          // 1. Filter to show ONLY completed jobs
           var historyJobs = snapshot.data!.docs.where((doc) {
             final data = doc.data() as Map<String, dynamic>;
             return data['status'] == 'Completed';
           }).toList();
 
-          // 2. Sort the jobs locally in Dart (newest first)
           historyJobs.sort((a, b) {
             final aData = a.data() as Map<String, dynamic>;
             final bData = b.data() as Map<String, dynamic>;

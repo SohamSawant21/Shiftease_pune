@@ -13,7 +13,6 @@ class CreateRequestScreen extends StatefulWidget {
 class _CreateRequestScreenState extends State<CreateRequestScreen> {
   final _formKey = GlobalKey<FormState>();
   
-  // Controllers (Phone controller has been removed)
   final _nameController = TextEditingController();
   final _locationController = TextEditingController();
   final _durationController = TextEditingController();
@@ -22,7 +21,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   
-  // Updated default helper count to 1
   int _helpersCount = 1;
   bool _isLoading = false;
 
@@ -87,7 +85,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) throw Exception('User is not logged in.');
 
-      // 1. Automatically fetch user details from the 'users' collection
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(currentUser.uid)
@@ -97,7 +94,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       final String fetchedPhone = userData['phone'] ?? '';
       final String fetchedName = userData['name'] ?? '';
 
-      // 2. Format the date and time
       final dt = DateTime(
         _selectedDate!.year,
         _selectedDate!.month,
@@ -106,7 +102,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
         _selectedTime!.minute,
       );
 
-      // 3. Save the request with the automatically fetched user data
       await FirebaseFirestore.instance.collection('requests').add({
         'title': _nameController.text.trim(),
         'location': _locationController.text.trim(),

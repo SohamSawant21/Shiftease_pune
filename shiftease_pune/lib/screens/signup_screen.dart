@@ -17,7 +17,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
-  bool _obscurePassword = true; // ✅ Added state variable
+  bool _obscurePassword = true; 
 
   @override
   void dispose() {

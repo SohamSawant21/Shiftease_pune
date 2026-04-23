@@ -31,7 +31,6 @@ class MyRequestsScreen extends StatelessWidget {
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
-        // Removed .orderBy() to avoid Firestore Composite Index errors
         stream: FirebaseFirestore.instance
             .collection('requests')
             .where('requesterId', isEqualTo: currentUser.uid)
@@ -49,13 +48,11 @@ class MyRequestsScreen extends StatelessWidget {
             return _buildEmptyState();
           }
 
-          // 1. Filter out completed jobs to keep the dashboard clean
           var activeJobs = snapshot.data!.docs.where((doc) {
             final data = doc.data() as Map<String, dynamic>;
             return data['status'] != 'Completed';
           }).toList();
 
-          // 2. Sort the jobs locally in Dart (newest first)
           activeJobs.sort((a, b) {
             final aData = a.data() as Map<String, dynamic>;
             final bData = b.data() as Map<String, dynamic>;
@@ -63,7 +60,7 @@ class MyRequestsScreen extends StatelessWidget {
             final bTime = bData['createdAt'] as Timestamp?;
             
             if (aTime == null && bTime == null) return 0;
-            if (aTime == null) return 1; // Put newly created (pending timestamp) at the top
+            if (aTime == null) return 1; 
             if (bTime == null) return -1;
             return bTime.compareTo(aTime);
           });

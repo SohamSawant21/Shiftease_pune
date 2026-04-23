@@ -23,7 +23,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // --- STANDARD LOGIN LOGIC ---
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -54,11 +53,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // --- NEW: FORGOT PASSWORD LOGIC ---
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
     
-    // Check if the user has entered an email first
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter your email address first.')),
@@ -71,7 +68,6 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Tell Firebase to send the reset email
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -178,7 +174,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 
-                // NEW: FORGOT PASSWORD BUTTON
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -201,7 +196,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                // SIGN UP NAVIGATION
                 TextButton(
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/signup');
