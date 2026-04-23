@@ -12,21 +12,23 @@ class CreateRequestScreen extends StatefulWidget {
 
 class _CreateRequestScreenState extends State<CreateRequestScreen> {
   final _formKey = GlobalKey<FormState>();
+  
+  // Controllers (Phone controller has been removed)
   final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _locationController = TextEditingController();
   final _durationController = TextEditingController();
   final _paymentController = TextEditingController();
 
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
-  int _helpersCount = 2;
+  
+  // Updated default helper count to 1
+  int _helpersCount = 1;
   bool _isLoading = false;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
     _locationController.dispose();
     _durationController.dispose();
     _paymentController.dispose();
@@ -54,14 +56,13 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-
+    
     if (date != null && mounted) {
       final time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.now(),
       );
-
-      if (time != null && mounted) {
+      if (time != null) {
         setState(() {
           _selectedDate = date;
           _selectedTime = time;
@@ -71,62 +72,60 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   }
 
   Future<void> _submit() async {
-    final formState = _formKey.currentState;
+    if (!_formKey.currentState!.validate()) return;
     
-    if (formState == null || !formState.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please correct the errors in the form')),
-      );
-      return;
-    }
-
     if (_selectedDate == null || _selectedTime == null) {
-       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a valid date and time')),
-      );
-      return;
-    }
-
-    final selectedDateTime = DateTime(
-      _selectedDate!.year,
-      _selectedDate!.month,
-      _selectedDate!.day,
-      _selectedTime!.hour,
-      _selectedTime!.minute,
-    );
-
-    if (selectedDateTime.isBefore(DateTime.now())) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('The selected time cannot be in the past')),
+        const SnackBar(content: Text('Please select a date and time')),
       );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        await FirebaseFirestore.instance.collection('requests').add({
-          'name': _nameController.text.trim(),
-          'location': _locationController.text.trim(),
-          'phone': _phoneController.text.trim(),
-          'duration': int.parse(_durationController.text.trim()),
-          'payment': double.parse(_paymentController.text.trim()),
-          'helpers': _helpersCount,
-          'dateTime': Timestamp.fromDate(selectedDateTime),
-          'status': 'Pending',
-          'requesterId': currentUser.uid,
-        });
+      if (currentUser == null) throw Exception('User is not logged in.');
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Request posted successfully!')),
-          );
-          Navigator.pop(context); // Go back to the dashboard
-        }
+      // 1. Automatically fetch user details from the 'users' collection
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+          
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final String fetchedPhone = userData['phone'] ?? '';
+      final String fetchedName = userData['name'] ?? '';
+
+      // 2. Format the date and time
+      final dt = DateTime(
+        _selectedDate!.year,
+        _selectedDate!.month,
+        _selectedDate!.day,
+        _selectedTime!.hour,
+        _selectedTime!.minute,
+      );
+
+      // 3. Save the request with the automatically fetched user data
+      await FirebaseFirestore.instance.collection('requests').add({
+        'title': _nameController.text.trim(),
+        'location': _locationController.text.trim(),
+        'duration': int.parse(_durationController.text.trim()),
+        'payment': double.parse(_paymentController.text.trim()),
+        'helpers': _helpersCount,
+        'dateTime': Timestamp.fromDate(dt),
+        'status': 'Pending',
+        'requesterId': currentUser.uid,
+        'requesterName': fetchedName,
+        'requesterPhone': fetchedPhone,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Request posted successfully!')),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -136,9 +135,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -189,24 +186,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
                       ),
                       validator: (value) =>
                           value == null || value.trim().isEmpty ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: 'Contact Phone Number',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) return 'Required';
-                        // Ensures the string only contains numbers and is exactly 10 digits long
-                        final isNumeric = RegExp(r'^[0-9]+$').hasMatch(value);
-                        if (!isNumeric || value.trim().length != 10) {
-                          return 'Enter a valid 10-digit number';
-                        }
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 16),
                     Row(

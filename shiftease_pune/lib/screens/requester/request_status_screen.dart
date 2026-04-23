@@ -74,15 +74,14 @@ class RequestStatusScreen extends StatelessWidget {
           'status': 'Completed',
         });
         if (context.mounted) {
-          Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Job marked as completed.')),
+            const SnackBar(content: Text('Job marked as completed!')),
           );
         }
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error updating status: $e')),
+            SnackBar(content: Text('Error updating job: $e')),
           );
         }
       }
@@ -101,24 +100,50 @@ class RequestStatusScreen extends StatelessWidget {
             ),
           );
         }
+
         if (!snapshot.hasData || !snapshot.data!.exists) {
           return const SizedBox();
         }
 
-        final userData = snapshot.data!.data() as Map<String, dynamic>;
-        final phone = userData['phone'] ?? 'No phone provided';
+        final workerData = snapshot.data!.data() as Map<String, dynamic>;
+        final String workerName = workerData['name'] ?? 'Unknown Worker';
+        final String workerPhone = workerData['phone'] ?? 'No phone provided';
 
         return Card(
-          child: ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: Colors.green,
-              child: Icon(Icons.engineering, color: Colors.white),
-            ),
-            title: Text(userData['name'] ?? 'Worker'),
-            subtitle: Text(phone),
-            trailing: IconButton(
-              icon: const Icon(Icons.phone, color: Colors.blue),
-              onPressed: () => _makePhoneCall(context, phone),
+          color: Colors.blue.shade50,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Worker Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Icon(Icons.person, color: Colors.blue),
+                    const SizedBox(width: 8),
+                    Text(workerName, style: const TextStyle(fontSize: 16)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.phone, color: Colors.blue),
+                        const SizedBox(width: 8),
+                        Text(workerPhone, style: const TextStyle(fontSize: 16)),
+                      ],
+                    ),
+                    IconButton(
+                      onPressed: () => _makePhoneCall(context, workerPhone),
+                      icon: const Icon(Icons.call),
+                      color: Colors.green,
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         );
@@ -138,84 +163,121 @@ class RequestStatusScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+
           if (!snapshot.hasData || !snapshot.data!.exists) {
             return const Center(child: Text('Request not found.'));
           }
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
-          final status = data['status'] ?? 'Pending';
-          final dateTime = (data['dateTime'] as Timestamp).toDate();
+          final String status = data['status'] ?? 'Pending';
+          final DateTime dateTime = (data['dateTime'] as Timestamp).toDate();
+          
+          // Dynamic UI logic based on Status
+          Color statusColor = Colors.orange;
+          IconData statusIcon = Icons.access_time;
+          String subtitle = 'Waiting for workers...';
+
+          if (status == 'Accepted') {
+            statusColor = Colors.blue;
+            statusIcon = Icons.handshake;
+            subtitle = 'A worker has accepted your job.';
+          } else if (status == 'Completed') {
+            statusColor = Colors.green;
+            statusIcon = Icons.check_circle;
+            subtitle = 'Job finished successfully.';
+          }
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Card(
-                  color: status == 'Accepted' ? Colors.green.shade50 : Colors.orange.shade50,
-                  child: ListTile(
-                    leading: Icon(
-                      status == 'Accepted' ? Icons.check_circle : Icons.access_time,
-                      color: status == 'Accepted' ? Colors.green : Colors.orange,
-                      size: 32,
-                    ),
-                    title: Text('Status: $status', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                    subtitle: Text(status == 'Accepted' ? 'A worker has accepted your job!' : 'Waiting for workers...'),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: statusColor.withOpacity(0.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(statusIcon, color: statusColor, size: 32),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Status: $status',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(subtitle, style: TextStyle(color: Colors.grey.shade700)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
+                
+                if (status == 'Accepted' && data.containsKey('workerId')) ...[
+                  _buildWorkerDetails(context, data['workerId']),
+                  const SizedBox(height: 24),
+                ],
+
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Job Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const Text('Job Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                         const Divider(),
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.work_outline),
-                          title: Text(data['name'] ?? 'Job'),
+                          title: Text(data['title'] ?? 'No Title'),
                         ),
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.location_on_outlined),
-                          title: Text(data['location'] ?? 'Location'),
+                          title: Text(data['location'] ?? 'No Location'),
                         ),
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.calendar_today),
                           title: Text(DateFormat('MMM dd, yyyy - hh:mm a').format(dateTime)),
                         ),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.currency_rupee),
+                          title: Text('${data['payment']}'),
+                        ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                if (status == 'Accepted' && data['workerId'] != null) ...[
-                  const Text('Assigned Worker', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  _buildWorkerDetails(context, data['workerId']),
-                  const SizedBox(height: 32),
-                  ElevatedButton.icon(
+                const SizedBox(height: 32),
+
+                // Action Buttons
+                if (status == 'Pending')
+                  TextButton(
+                    onPressed: () => _cancelRequest(context, jobId),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    child: const Text('Cancel Request'),
+                  ),
+                  
+                if (status == 'Accepted')
+                  ElevatedButton(
                     onPressed: () => _markAsCompleted(context, jobId),
-                    icon: const Icon(Icons.done_all),
-                    label: const Text('Mark as Completed'),
                     style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
+                    child: const Text('Mark as Completed', style: TextStyle(fontSize: 16)),
                   ),
-                ],
-                if (status == 'Pending') ...[
-                  const SizedBox(height: 32),
-                  TextButton.icon(
-                    onPressed: () => _cancelRequest(context, jobId),
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    label: const Text('Cancel Request', style: TextStyle(color: Colors.red)),
-                  ),
-                ]
               ],
             ),
           );

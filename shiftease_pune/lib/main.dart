@@ -7,6 +7,7 @@ import 'firebase_options.dart';
 import 'services/request_provider.dart';
 import 'utils/app_theme.dart';
 
+import 'screens/requester/requester_history_screen.dart';
 import 'screens/worker/accepted_job_details_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/login_screen.dart';
@@ -57,6 +58,7 @@ class ShifteaseApp extends StatelessWidget {
         '/worker_dashboard': (context) => const WorkerDashboard(),
         '/job_details': (context) => const JobDetailsScreen(),
         '/accepted_job_details': (context) => const AcceptedJobDetailsScreen(),
+        '/requester_history': (context) => const RequesterHistoryScreen(),
       },
     );
   }
