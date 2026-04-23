@@ -73,7 +73,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   Future<void> _submit() async {
     final formState = _formKey.currentState;
     
-    // 1. Check if all text fields pass their individual validation rules
     if (formState == null || !formState.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please correct the errors in the form')),
@@ -81,7 +80,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       return;
     }
 
-    // 2. Ensure Date and Time are selected
     if (_selectedDate == null || _selectedTime == null) {
        ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a valid date and time')),
@@ -89,7 +87,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       return;
     }
 
-    // 3. Ensure the selected Date and Time are not in the past
     final selectedDateTime = DateTime(
       _selectedDate!.year,
       _selectedDate!.month,
@@ -112,7 +109,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
-        // Post data to Firestore
         await FirebaseFirestore.instance.collection('requests').add({
           'name': _nameController.text.trim(),
           'location': _locationController.text.trim(),

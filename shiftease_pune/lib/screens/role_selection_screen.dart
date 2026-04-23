@@ -12,7 +12,6 @@ class RoleSelectionScreen extends StatefulWidget {
 class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   bool _isLoading = false;
 
-  // Function to save the mode and navigate
   Future<void> _selectRole(String mode, String route) async {
     setState(() {
       _isLoading = true;
@@ -21,7 +20,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Update the user's current mode in Firestore
         await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -29,8 +27,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
           'currentMode': mode,
         });
 
-        // Navigate to the correct dashboard using pushNamed
-        // This keeps the Role Selection screen in the stack, enabling the back button!
         if (mounted) {
           Navigator.pushReplacementNamed(context, route);
         }
@@ -76,9 +72,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             : SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // Restored left alignment
+                  crossAxisAlignment: CrossAxisAlignment.start, 
                   children: [
-                    // Basic Title restored to match original design
                     const Text(
                       'Select Your Role',
                       style: TextStyle(
@@ -93,7 +88,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Requester Option (Simple Card UI)
                     Card(
                       elevation: 2,
                       shape: RoundedRectangleBorder(
@@ -133,7 +127,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     
                     const SizedBox(height: 16),
 
-                    // Worker Option (Simple Card UI)
                     Card(
                       elevation: 2,
                       shape: RoundedRectangleBorder(

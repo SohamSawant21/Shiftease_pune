@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 class RequestStatusScreen extends StatelessWidget {
   const RequestStatusScreen({super.key});
 
-  // NEW: The logic to launch the native phone dialer
   Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
     final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
     try {
@@ -117,7 +116,6 @@ class RequestStatusScreen extends StatelessWidget {
             ),
             title: Text(userData['name'] ?? 'Worker'),
             subtitle: Text(phone),
-            // NEW: The clickable phone icon
             trailing: IconButton(
               icon: const Icon(Icons.phone, color: Colors.blue),
               onPressed: () => _makePhoneCall(context, phone),

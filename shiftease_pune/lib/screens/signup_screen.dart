@@ -64,7 +64,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 32),
                 
-                // Name Field
                 TextFormField(
                   controller: _nameController,
                   keyboardType: TextInputType.name,
@@ -82,7 +81,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Phone Field
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
@@ -100,7 +98,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Email Field
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -118,7 +115,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
@@ -139,7 +135,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Sign Up Button
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
@@ -150,14 +145,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             });
 
                             try {
-                              // 1. Create user in Firebase Auth
                               final credential = await FirebaseAuth.instance
                                   .createUserWithEmailAndPassword(
                                 email: _emailController.text.trim(),
                                 password: _passwordController.text.trim(),
                               );
 
-                              // 2. Save user data to Firestore
                               await FirebaseFirestore.instance
                                   .collection('users')
                                   .doc(credential.user!.uid)
@@ -169,7 +162,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 'createdAt': FieldValue.serverTimestamp(),
                               });
 
-                              // 3. Navigate
                               if (mounted) {
                                 Navigator.pushReplacementNamed(context, '/role_selection');
                               }
@@ -203,7 +195,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                 const SizedBox(height: 16),
 
-                // Navigate back to Login
                 TextButton(
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/login');

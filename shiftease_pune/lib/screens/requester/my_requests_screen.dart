@@ -23,7 +23,6 @@ class MyRequestsScreen extends StatelessWidget {
           ),
         ],
       ),
-      // Use StreamBuilder to listen to Firestore instead of Provider
       body: currentUser == null
           ? const Center(child: Text('Please log in.'))
           : StreamBuilder<QuerySnapshot>(
@@ -39,7 +38,6 @@ class MyRequestsScreen extends StatelessWidget {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
                 
-                // If there is no data or the list is empty, show the empty state
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(
                     child: Column(
@@ -53,7 +51,6 @@ class MyRequestsScreen extends StatelessWidget {
                   );
                 }
 
-                // We have data! Map it to a list of cards
                 final requests = snapshot.data!.docs;
 
                 return ListView.builder(
@@ -63,7 +60,6 @@ class MyRequestsScreen extends StatelessWidget {
                     final doc = requests[index];
                     final data = doc.data() as Map<String, dynamic>;
                     
-                    // Convert Firestore Timestamp to Dart DateTime
                     final DateTime dateTime = (data['dateTime'] as Timestamp).toDate();
 
                     return Card(
@@ -114,7 +110,6 @@ class MyRequestsScreen extends StatelessWidget {
                           }
                         ),
                         onTap: () {
-                          // Pass the Firebase Document ID to the status screen
                           Navigator.pushNamed(context, '/request_status', arguments: doc.id);
                         },
                       ),
@@ -123,7 +118,6 @@ class MyRequestsScreen extends StatelessWidget {
                 );
               },
             ),
-      // Floating Action Button restored
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.pushNamed(context, '/create_request');

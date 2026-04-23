@@ -7,7 +7,7 @@ class Request {
   final int duration;
   final int helpers;
   final double payment;
-  String status; // 'Pending', 'Accepted', 'In Progress', 'Completed'
+  String status; 
 
   Request({
     required this.id,
