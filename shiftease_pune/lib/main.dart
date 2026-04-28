@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-import 'firebase_options.dart';          
+import 'firebase_options.dart';
 
-import 'services/request_provider.dart';
-import 'utils/app_theme.dart';
-
+// Screens
 import 'screens/requester/requester_history_screen.dart';
 import 'screens/worker/accepted_job_details_screen.dart';
 import 'screens/signup_screen.dart';
@@ -19,6 +16,8 @@ import 'screens/requester/request_status_screen.dart';
 import 'screens/worker/worker_dashboard.dart';
 import 'screens/worker/job_details_screen.dart';
 
+// Theme
+import 'utils/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,14 +26,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => RequestProvider()),
-      ],
-      child: const ShifteaseApp(),
-    ),
-  );
+  runApp(const ShifteaseApp());
 }
 
 class ShifteaseApp extends StatelessWidget {
