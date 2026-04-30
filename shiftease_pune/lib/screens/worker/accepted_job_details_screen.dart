@@ -141,7 +141,7 @@ class AcceptedJobDetailsScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(data['name'] ?? 'Job', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text(data['title'] ?? 'Job', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                         const Divider(),
                         ListTile(
                           contentPadding: EdgeInsets.zero,

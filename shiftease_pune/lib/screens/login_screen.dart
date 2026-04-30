@@ -147,7 +147,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                // PASSWORD FIELD
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -184,7 +183,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 
                 const SizedBox(height: 24),
                 
-                // LOGIN BUTTON
                 SizedBox(
                   height: 50,
                   child: ElevatedButton(

@@ -103,7 +103,7 @@ class WorkerDashboard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              data['name'] ?? 'Job',
+              data['title'] ?? 'Job',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -159,7 +159,7 @@ class WorkerDashboard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: const Icon(Icons.check_circle, color: Colors.green, size: 40),
-        title: Text(data['name'] ?? 'Job', style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(data['title'] ?? 'Job', style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('${data['location']}\n₹${payment.toStringAsFixed(0)}'),
         isThreeLine: true,
         trailing: const Chip(

@@ -45,7 +45,7 @@ class JobDetailsScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          data['name'] ?? 'Job Name',
+                          data['title'] ?? 'Job Name',
                           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 16),
